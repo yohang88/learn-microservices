@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	logkit "github.com/go-kit/kit/log"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"log"
@@ -37,15 +38,33 @@ func (s *service) GetHealthCheck() (string, error) {
 }
 
 func (s *service) GetProduct(Id string) (Product, error) {
+	docID, err := primitive.ObjectIDFromHex(Id)
+
+	if err != nil {
+		log.Fatalf("Error: %v", err)
+	}
+
+	filter := bson.M{"_id": docID}
+
+	var product Product
+
+	collection := s.db.Database("products").Collection("catalogs")
+
+	err = collection.FindOne(context.TODO(), filter).Decode(&product)
+
+	if err != nil {
+		log.Fatalf("Error: %v", err)
+	}
+
 	return Product{
 		Id: Id,
-		Name: "Test Product Name",
-		Description: "Test Product Description",
+		Name: product.Name,
+		Description: product.Description,
 	}, nil
 }
 
 func (s *service) StoreProduct(product Product) (Product, error) {
-	NewProduct := struct {
+	NewProduct := struct{
 		Name 		string `json:"name"`
 		Description string `json:"description"`
 	}{}
