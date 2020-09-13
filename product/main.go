@@ -1,13 +1,18 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
-	"github.com/go-kit/kit/log"
+	logkit "github.com/go-kit/kit/log"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -16,21 +21,29 @@ func main() {
 	)
 	flag.Parse()
 
-	var logger log.Logger
+	var logger logkit.Logger
 	{
-		logger = log.NewLogfmtLogger(os.Stderr)
-		logger = log.With(logger, "timestamp", log.DefaultTimestampUTC)
+		logger = logkit.NewLogfmtLogger(os.Stderr)
+		logger = logkit.With(logger, "timestamp", logkit.DefaultTimestampUTC)
 	}
+
+	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://127.0.0.1:27017"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	err = client.Connect(ctx)
 
 	var s Service
 	{
-		s = NewService()
+		s = NewService(client, logger)
 		s = LoggingMiddleware(logger)(s)
 	}
 
 	var h http.Handler
 	{
-		h = MakeHTTPHandler(s, log.With(logger, "component", "HTTP"))
+		h = MakeHTTPHandler(s, logkit.With(logger, "component", "HTTP"))
 	}
 
 	errs := make(chan error)

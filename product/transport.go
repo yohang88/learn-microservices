@@ -33,6 +33,13 @@ func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
 		options...,
 	))
 
+	r.Methods("POST").Path("/products").Handler(httptransport.NewServer(
+		e.StoreProductEndpoint,
+		decodeStoreProductRequest,
+		encodeResponse,
+		options...,
+	))
+
 	return r
 }
 
@@ -52,6 +59,17 @@ type GetProductResponse struct {
 	Description string `json:"description"`
 }
 
+type StoreProductRequest struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+type StoreProductResponse struct {
+	Id          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
 func decodeGetHealthCheckRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var req GetHealthCheckRequest
 	return req, nil
@@ -63,6 +81,16 @@ func decodeGetProductRequest(_ context.Context, r *http.Request) (interface{}, e
 	var req GetProductRequest
 
 	req.Id = vars["id"]
+
+	return req, nil
+}
+
+func decodeStoreProductRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req StoreProductRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
