@@ -26,6 +26,13 @@ func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
 		options...,
 	))
 
+	r.Methods("GET").Path("/products").Handler(httptransport.NewServer(
+		e.GetProductListEndpoint,
+		decodeGetProductListRequest,
+		encodeResponse,
+		options...,
+	))
+
 	r.Methods("GET").Path("/products/{id}").Handler(httptransport.NewServer(
 		e.GetProductEndpoint,
 		decodeGetProductRequest,
@@ -48,6 +55,10 @@ type GetHealthCheckRequest struct {}
 type GetHealthCheckResponse struct {
 	Status string `json:"status"`
 }
+
+type GetProductListRequest struct {}
+
+type GetProductListResponse []Product
 
 type GetProductRequest struct {
 	Id string `json:"id"`
@@ -72,6 +83,11 @@ type StoreProductResponse struct {
 
 func decodeGetHealthCheckRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var req GetHealthCheckRequest
+	return req, nil
+}
+
+func decodeGetProductListRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req GetProductListRequest
 	return req, nil
 }
 

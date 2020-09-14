@@ -26,6 +26,14 @@ func (mw loggingMiddleware) GetHealthCheck() (s string, err error) {
 	return mw.next.GetHealthCheck()
 }
 
+func (mw loggingMiddleware) GetProductList() (products []Product, err error) {
+	defer func(begin time.Time) {
+		mw.logger.Log("method", "GetProductList", "time", time.Since(begin), "err", err)
+	}(time.Now())
+
+	return mw.next.GetProductList()
+}
+
 func (mw loggingMiddleware) GetProduct(id string) (product Product, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log("method", "GetProduct", "id", id, "time", time.Since(begin), "err", err)

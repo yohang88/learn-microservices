@@ -6,6 +6,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 )
 
@@ -23,18 +24,52 @@ type service struct {
 
 type Service interface {
 	GetHealthCheck() (string, error)
+	GetProductList() ([]Product, error)
 	GetProduct(Id string) (Product, error)
 	StoreProduct(product Product) (Product, error)
 }
 
 type Product struct {
-	Id 			string `json:"id"`
+	Id 			string `json:"id" bson:"_id"`
 	Name 		string `json:"name"`
 	Description string `json:"description"`
 }
 
 func (s *service) GetHealthCheck() (string, error) {
 	return "ok", nil
+}
+
+func (s *service) GetProductList() ([]Product, error) {
+	var results []Product
+
+	collection := s.db.Database("products").Collection("catalogs")
+
+	findOptions := options.Find()
+
+	cur, err := collection.Find(context.TODO(), bson.D{{}}, findOptions)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for cur.Next(context.TODO()) {
+		var elem Product
+		err := cur.Decode(&elem)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		results = append(results, elem)
+
+	}
+
+	if err := cur.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	cur.Close(context.TODO())
+
+	return results, nil
 }
 
 func (s *service) GetProduct(Id string) (Product, error) {

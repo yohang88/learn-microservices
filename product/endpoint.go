@@ -7,6 +7,7 @@ import (
 
 type Endpoints struct {
 	GetHealthCheckEndpoint endpoint.Endpoint
+	GetProductListEndpoint endpoint.Endpoint
 	GetProductEndpoint endpoint.Endpoint
 	StoreProductEndpoint endpoint.Endpoint
 }
@@ -14,6 +15,7 @@ type Endpoints struct {
 func makeServerEndpoints(svc Service) Endpoints {
 	return Endpoints{
 		GetHealthCheckEndpoint: makeHealthCheckEndpoint(svc),
+		GetProductListEndpoint: makeGetProductListEndpoint(svc),
 		GetProductEndpoint: makeGetProductEndpoint(svc),
 		StoreProductEndpoint: makeStoreProductEndpoint(svc),
 	}
@@ -24,6 +26,16 @@ func makeHealthCheckEndpoint(svc Service) endpoint.Endpoint {
 		status, _ := svc.GetHealthCheck()
 
 		return GetHealthCheckResponse{status}, nil
+	}
+}
+
+func makeGetProductListEndpoint(svc Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		// req := request.(GetProductListRequest)
+
+		result, _ := svc.GetProductList()
+
+		return GetProductListResponse(result), nil
 	}
 }
 
