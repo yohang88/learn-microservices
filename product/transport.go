@@ -65,9 +65,10 @@ type GetProductRequest struct {
 }
 
 type GetProductResponse struct {
-	Id          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Id          string   `json:"id"`
+	Name        string   `json:"name"`
+	Description string 	 `json:"description"`
+	Reviews 	[]Review `json:"reviews"`
 }
 
 type StoreProductRequest struct {

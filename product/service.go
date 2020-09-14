@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	logkit "github.com/go-kit/kit/log"
+	reviewpb "github.com/yohang88/learn-microservices/review/proto"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -10,16 +11,18 @@ import (
 	"log"
 )
 
-func NewService(db *mongo.Client, logger logkit.Logger) Service {
+func NewService(db *mongo.Client, logger logkit.Logger, review reviewpb.ReviewServiceClient) Service {
 	return &service{
 		db: db,
 		logger: logger,
+		review: review,
 	}
 }
 
 type service struct {
 	db *mongo.Client
 	logger logkit.Logger
+	review reviewpb.ReviewServiceClient
 }
 
 type Service interface {
@@ -30,10 +33,17 @@ type Service interface {
 }
 
 type Product struct {
-	Id 			string `json:"id" bson:"_id"`
-	Name 		string `json:"name"`
-	Description string `json:"description"`
+	Id 			string   `json:"id" bson:"_id"`
+	Name 		string   `json:"name"`
+	Description string 	 `json:"description"`
+	Reviews 	[]Review `json:"reviews"`
 }
+
+type Review struct {
+	Id 			string `json:"id"`
+	Content 	string `json:"content"`
+}
+
 
 func (s *service) GetHealthCheck() (string, error) {
 	return "ok", nil
@@ -91,10 +101,28 @@ func (s *service) GetProduct(Id string) (Product, error) {
 		log.Fatalf("Error: %v", err)
 	}
 
+	reviewResponse, errResponse := s.review.GetReviewList(context.Background(), &reviewpb.GetReviewListRequest{
+		ProductId: Id,
+	})
+
+	if errResponse != nil {
+		log.Fatalf("Error: %v", err)
+	}
+
+	var reviews []Review
+
+	for _, record := range reviewResponse.Reviews {
+		reviews = append(reviews, Review{
+			Id: record.GetId(),
+			Content: record.GetContent(),
+		})
+	}
+
 	return Product{
 		Id: Id,
 		Name: product.Name,
 		Description: product.Description,
+		Reviews: reviews,
 	}, nil
 }
 

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	logkit "github.com/go-kit/kit/log"
 	reviewpb "github.com/yohang88/learn-microservices/review/proto"
@@ -10,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"google.golang.org/grpc"
 	"log"
-	"net/http"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -18,49 +17,24 @@ import (
 )
 
 func main() {
-	var (
-		httpAddr = flag.String("http", ":8080", "http listen address")
-	)
-	flag.Parse()
-
 	var logger logkit.Logger
 	{
 		logger = logkit.NewLogfmtLogger(os.Stderr)
 		logger = logkit.With(logger, "timestamp", logkit.DefaultTimestampUTC)
 	}
 
-	mongoClient, err := mongo.NewClient(options.Client().ApplyURI("mongodb://127.0.0.1:27017"))
+	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://127.0.0.1:27017"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	err = mongoClient.Connect(ctx)
-
-	var review reviewpb.ReviewServiceClient
-	{
-		grpcConn, err := grpc.Dial("localhost:50000", grpc.WithInsecure())
-		client := reviewpb.NewReviewServiceClient(grpcConn)
-
-		if err != nil {
-			log.Fatalf("Could not connect: %v", err)
-		}
-
-		defer grpcConn.Close()
-
-		review = client
-	}
-
+	err = client.Connect(ctx)
 
 	var s Service
 	{
-		s = NewService(mongoClient, logger, review)
+		s = NewService(client, logger)
 		s = LoggingMiddleware(logger)(s)
-	}
-
-	var h http.Handler
-	{
-		h = MakeHTTPHandler(s, logkit.With(logger, "component", "HTTP"))
 	}
 
 	errs := make(chan error)
@@ -71,8 +45,20 @@ func main() {
 	}()
 
 	go func() {
-		logger.Log("transport", "HTTP", "addr", *httpAddr)
-		errs <- http.ListenAndServe(*httpAddr, h)
+		listener, err := net.Listen("tcp", "0.0.0.0:50000")
+
+		if err != nil {
+			log.Fatalf("Failed to listen: %v", err)
+		}
+
+		gRPCServer := grpc.NewServer()
+
+		endpoints := MakeGRPCServer(ctx, makeServerEndpoints(s))
+
+		reviewpb.RegisterReviewServiceServer(gRPCServer, endpoints)
+
+		log.Println("Review Service is listening on port 50000...")
+		errs <- gRPCServer.Serve(listener)
 	}()
 
 	logger.Log("exit", <-errs)

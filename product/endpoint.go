@@ -49,6 +49,7 @@ func makeGetProductEndpoint(svc Service) endpoint.Endpoint {
 			Id: result.Id,
 			Name: result.Name,
 			Description: result.Description,
+			Reviews: result.Reviews,
 		}, nil
 	}
 }

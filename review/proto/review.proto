@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package review;
+
+option go_package="proto;reviewpb";
+
+message GetReviewListRequest {
+  string product_id = 1;
+}
+
+message Review {
+  string id = 1;
+  string content = 2;
+}
+
+message GetReviewListResponse {
+  repeated Review reviews = 1;
+}
+
+service ReviewService {
+  rpc GetReviewList(GetReviewListRequest) returns (GetReviewListResponse) {};
+}
