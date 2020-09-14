@@ -35,11 +35,11 @@ type ProductReview struct {
 func (s *service) GetReviewList(ProductId string) ([]ProductReview, error) {
 	docProductID, err := primitive.ObjectIDFromHex(ProductId)
 
-	var results []ProductReview
+	// var results []ProductReview
 
 	filter := bson.M{"product_id": docProductID}
 
-	collection := s.db.Database("product_reviews").Collection("reviews")
+	collection := s.db.Database("reviews").Collection("reviews")
 
 	findOptions := options.Find()
 
@@ -49,22 +49,35 @@ func (s *service) GetReviewList(ProductId string) ([]ProductReview, error) {
 		log.Fatal(err)
 	}
 
-	for cur.Next(context.TODO()) {
-		var elem ProductReview
-		err := cur.Decode(&elem)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		results = append(results, elem)
-
-	}
-
-	if err := cur.Err(); err != nil {
-		log.Fatal(err)
-	}
+	//for cur.Next(context.TODO()) {
+	//	var elem ProductReview
+	//	err := cur.Decode(&elem)
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
+	//
+	//	results = append(results, elem)
+	//
+	//}
+	//
+	//if err := cur.Err(); err != nil {
+	//	log.Fatal(err)
+	//}
 
 	cur.Close(context.TODO())
 
-	return results, nil
+	var resultsDummy []ProductReview
+
+	resultsDummy = append(resultsDummy, ProductReview{
+		Id: "1",
+		Content: "Content 1",
+	}, ProductReview{
+		Id: "2",
+		Content: "Content 2",
+	}, ProductReview{
+		Id: "3",
+		Content: "Content 3",
+	})
+
+	return resultsDummy, nil
 }

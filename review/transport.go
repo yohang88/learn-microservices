@@ -45,24 +45,16 @@ func decodeGetReviewListRequest(ctx context.Context, r interface{}) (interface{}
 }
 
 func encodeGetReviewListResponse(ctx context.Context, r interface{}) (interface{}, error) {
-	//res := r.(GetReviewListResponse)
+	res := r.(GetReviewListResponse)
 
 	var reviews []*reviewpb.Review
-	reviews = append(reviews, &reviewpb.Review{
-		Id: "1",
-		Content: "Content 1",
-	})
 
-	reviews = append(reviews, &reviewpb.Review{
-		Id: "2",
-		Content: "Content 2",
-	})
-
-	reviews = append(reviews, &reviewpb.Review{
-		Id: "3",
-		Content: "Content 3",
-	})
-
+	for _, record := range res {
+		reviews = append(reviews, &reviewpb.Review{
+			Id: record.Id,
+			Content: record.Content,
+		})
+	}
 	return &reviewpb.GetReviewListResponse{
 		Reviews: reviews,
 	}, nil
