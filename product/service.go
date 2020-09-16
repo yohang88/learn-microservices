@@ -106,7 +106,13 @@ func (s *service) GetProduct(Id string) (Product, error) {
 	})
 
 	if errResponse != nil {
-		log.Fatalf("Error: %v", err)
+		s.logger.Log("message", "Could not connect to Review Service")
+
+		return Product{
+			Id: Id,
+			Name: product.Name,
+			Description: product.Description,
+		}, nil
 	}
 
 	var reviews []Review

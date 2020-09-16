@@ -23,17 +23,19 @@ func main() {
 		logger = logkit.With(logger, "timestamp", logkit.DefaultTimestampUTC)
 	}
 
-	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://127.0.0.1:27017"))
+	mongoConnection := os.Getenv("MONGO_CONNECTION")
+
+	mongoClient, err := mongo.NewClient(options.Client().ApplyURI(mongoConnection))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	err = client.Connect(ctx)
+	err = mongoClient.Connect(ctx)
 
 	var s Service
 	{
-		s = NewService(client, logger)
+		s = NewService(mongoClient, logger)
 		s = LoggingMiddleware(logger)(s)
 	}
 
@@ -57,7 +59,7 @@ func main() {
 
 		reviewpb.RegisterReviewServiceServer(gRPCServer, endpoints)
 
-		log.Println("Review Service is listening on port 50000...")
+		logger.Log("message", "Review Service is listening on port 50000...")
 		errs <- gRPCServer.Serve(listener)
 	}()
 

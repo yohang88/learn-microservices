@@ -29,9 +29,11 @@ func main() {
 		logger = logkit.With(logger, "timestamp", logkit.DefaultTimestampUTC)
 	}
 
-	mongoClient, err := mongo.NewClient(options.Client().ApplyURI("mongodb://127.0.0.1:27017"))
+	mongoConnection := os.Getenv("MONGO_CONNECTION")
+
+	mongoClient, err := mongo.NewClient(options.Client().ApplyURI(mongoConnection))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Cannot connect to MongoDB: %v", err)
 	}
 
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)

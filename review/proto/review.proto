@@ -1,8 +1,6 @@
 syntax = "proto3";
 
-package review;
-
-option go_package="proto;reviewpb";
+package proto;
 
 message GetReviewListRequest {
   string product_id = 1;
